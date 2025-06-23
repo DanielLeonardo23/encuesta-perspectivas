@@ -468,8 +468,7 @@ export default function SurveyInsightsPage() {
       toast({
         variant: "destructive",
         title: "Importación Fallida",
-        description:
-          "No se pudo importar o analizar el archivo CSV. Asegúrate de que sea un CSV de una sola columna.",
+        description: "No se pudo importar o analizar el archivo CSV. Asegúrate de que tenga el formato correcto.",
       });
     } finally {
       setIsImporting(false);

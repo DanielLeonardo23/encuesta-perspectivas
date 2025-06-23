@@ -40,7 +40,7 @@ export function exportToCsv(responses: SurveyResponse[]): void {
   }
 
   const csvString = csvRows.join("\n");
-  const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(["\uFEFF" + csvString], { type: "text/csv;charset=utf-8;" });
 
   const link = document.createElement("a");
   const url = URL.createObjectURL(blob);
@@ -53,7 +53,7 @@ export function exportToCsv(responses: SurveyResponse[]): void {
 }
 
 /**
- * Parses a single-column CSV file and returns an array of texts.
+ * Parses a CSV file and returns an array of texts from the first column.
  */
 export function parseCsvToTexts(file: File): Promise<string[]> {
   return new Promise((resolve, reject) => {
@@ -61,25 +61,37 @@ export function parseCsvToTexts(file: File): Promise<string[]> {
 
     reader.onload = (event) => {
       try {
-        const text = event.target?.result as string;
-        if (!text) {
+        const csvText = event.target?.result as string;
+        if (!csvText) {
           resolve([]);
           return;
         }
-        // Simple parser: split by new line, assumes first column is the text.
-        // This is a basic implementation and does not handle complex CSV with escaped quotes.
-        const rows = text.split(/\r\n|\n/);
         
-        // Remove header if it exists and filter out empty lines.
-        const dataRows = rows.slice(1).filter(row => row.trim() !== '');
+        const rows = csvText.split(/\r\n|\n/).filter(row => row.trim() !== '');
+        if (rows.length === 0) {
+          resolve([]);
+          return;
+        }
 
-        // If after removing header there are no rows, maybe there was no header
-        const texts = (dataRows.length > 0 ? dataRows : rows.filter(row => row.trim() !== '')).map(row => {
-          // Get content of the first column
-           const firstCol = row.split(',')[0];
-           // Remove quotes if they exist
-           return firstCol.replace(/^"|"$/g, '').trim();
-        });
+        // Heuristically detect and skip header
+        const headerPattern = /text|sentiment|score|magnitude/i;
+        const dataRows = headerPattern.test(rows[0]) ? rows.slice(1) : rows;
+
+        const texts = dataRows.map(row => {
+          if (!row.trim()) return '';
+
+          // This regex handles quoted fields with commas and escaped quotes.
+          // It extracts the content of the first column.
+          const match = row.match(/^(?:"((?:[^"]|"")*)"|([^,]*))/);
+          if (match) {
+            // match[1] is for quoted content, match[2] for unquoted.
+            const text = match[1] !== undefined 
+              ? match[1].replace(/""/g, '"') 
+              : (match[2] || '');
+            return text.trim();
+          }
+          return '';
+        }).filter(text => text); // Filter out any resulting empty strings
 
         resolve(texts);
       } catch (error) {
@@ -91,6 +103,6 @@ export function parseCsvToTexts(file: File): Promise<string[]> {
       reject(error);
     };
 
-    reader.readAsText(file);
+    reader.readAsText(file, 'UTF-8');
   });
 }
