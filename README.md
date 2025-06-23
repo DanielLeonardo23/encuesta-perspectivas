@@ -1,23 +1,21 @@
 # Survey Insights
 
-An AI-powered application to analyze sentiment from survey responses and generate insightful reports.
+Una aplicación potenciada por IA para analizar el sentimiento de respuestas de encuestas y generar informes con información útil.
 
-## Features
+## Características
 
-- **Survey Input**: Enter survey responses directly into the app.
-- **CSV Import**: Upload survey responses from a CSV file.
-- **Sentiment Analysis**: Each response is analyzed for sentiment (positive, negative, neutral), emotional strength, and specific detected emotions using GenAI.
-- **Report Generation**: Generate a comprehensive summary report that includes key metrics and suggested improvements based on the overall sentiment of the responses.
-- **Data Export**: Export all analyzed data to a CSV file for offline analysis or record-keeping.
-- **Data Visualization**: View analysis results for each response and summary metrics in a clean, modern interface.
+- **Entrada de Encuestas**: Ingresa respuestas de encuestas directamente en la app.
+- **Importación CSV**: Sube respuestas de encuestas desde un archivo CSV.
+- **Análisis de Sentimiento**: Cada respuesta es analizada para detectar el sentimiento (positivo, negativo, neutral), la intensidad emocional y emociones específicas usando GenAI.
+- **Generación de Informes**: Genera un informe resumen completo que incluye métricas clave y sugerencias de mejora basadas en el sentimiento general de las respuestas.
+- **Exportación de Datos**: Exporta todos los datos analizados a un archivo CSV para análisis offline o para archivo.
+- **Visualización de Datos**: Visualiza los resultados del análisis por respuesta y las métricas resumidas en una interfaz moderna y limpia.
 
-## Getting Started
+## Primeros Pasos
 
-To get started, simply run the development server:
-
-```bash
+Para comenzar, simplemente ejecuta el servidor de desarrollo:
 npm run dev
-```
+```bash
 
 Then open [http://localhost:9002](http://localhost:9002) in your browser.
 
