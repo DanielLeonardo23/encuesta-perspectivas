@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,6 +10,7 @@ import {
   Loader2,
   Meh,
   Smile,
+  Sparkles,
   TrendingDown,
   TrendingUp,
   Upload,
@@ -77,7 +77,7 @@ const ReportSummary = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">{report.report}</p>
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">{report.report}</p>
         </CardContent>
       </Card>
 
@@ -115,12 +115,50 @@ const ReportSummary = ({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
             {report.suggestedImprovements}
           </p>
         </CardContent>
       </Card>
     </div>
+  );
+};
+
+const AdviceCard = ({
+  advice,
+  isGenerating,
+}: {
+  advice: string | null;
+  isGenerating: boolean;
+}) => {
+  if (isGenerating) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Generando Consejo...</CardTitle>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center p-8">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!advice) return null;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Sparkles className="text-accent" /> Consejo Generado por IA
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+          {advice}
+        </p>
+      </CardContent>
+    </Card>
   );
 };
 
@@ -165,7 +203,7 @@ const ResponseCard = ({ response }: { response: SurveyResponse }) => {
             <span className="font-semibold text-sm">Emociones Detectadas</span>
             <div className="flex flex-wrap gap-2 mt-2">
               {response.detectedEmotions.map((emotion) => (
-                <Badge key={emotion} variant="secondary">
+                <Badge key={emotion} variant="secondary" className="capitalize">
                   {emotion}
                 </Badge>
               ))}
@@ -218,8 +256,10 @@ export default function SurveyInsightsPage() {
   const [answers, setAnswers] = useState<string[]>(() => Array(questions.length).fill(""));
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [report, setReport] = useState<SummaryReport | null>(null);
+  const [advice, setAdvice] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [isGeneratingAdvice, setIsGeneratingAdvice] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -302,6 +342,32 @@ export default function SurveyInsightsPage() {
       });
     } finally {
       setIsGeneratingReport(false);
+    }
+  };
+
+  const handleGenerateAdvice = async () => {
+    if (responses.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "No se puede generar consejo",
+        description: "Por favor, analiza al menos una respuesta primero.",
+      });
+      return;
+    }
+    setIsGeneratingAdvice(true);
+    setAdvice(null);
+    try {
+      const { generateAdviceAction } = (await import("./actions")) as { generateAdviceAction: (responses: SurveyResponse[]) => Promise<{ advice: string }> };
+      const adviceData = await generateAdviceAction(responses);
+      setAdvice(adviceData.advice);
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Falló la Generación del Consejo",
+        description: "No se pudo generar el consejo.",
+      });
+    } finally {
+      setIsGeneratingAdvice(false);
     }
   };
 
@@ -393,7 +459,6 @@ export default function SurveyInsightsPage() {
             <Button
               onClick={handleGenerateReport}
               disabled={responses.length === 0 || isGeneratingReport}
-              className="bg-accent hover:bg-accent/90 text-accent-foreground"
             >
               {isGeneratingReport ? (
                 <Loader2 className="mr-2 animate-spin" />
@@ -402,61 +467,73 @@ export default function SurveyInsightsPage() {
               )}
               Generar Informe
             </Button>
+             <Button
+              onClick={handleGenerateAdvice}
+              disabled={responses.length === 0 || isGeneratingAdvice}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
+            >
+              {isGeneratingAdvice ? (
+                <Loader2 className="mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2" />
+              )}
+              Generar Consejo
+            </Button>
           </div>
         </div>
       </header>
       <main className="flex-1 p-4 md:p-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-          <div className="lg:col-span-1 flex flex-col gap-8">
-            <Card>
-              <CardHeader>
-                <CardTitle>Encuesta de Satisfacción</CardTitle>
-                <CardDescription>
-                  Pregunta {currentStep + 1} de {questions.length}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(processForm)} className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="answer"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="font-semibold text-base">{questions[currentStep]}</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="Escribe tu respuesta aquí..."
-                              {...field}
-                              rows={5}
-                              className="resize-y"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex justify-between items-center gap-4">
-                      <Button type="button" variant="outline" onClick={handlePreviousStep} disabled={currentStep === 0 || isAnalyzing}>
-                        Anterior
-                      </Button>
-                      <Button type="submit" disabled={isAnalyzing}>
-                        {isAnalyzing && currentStep === questions.length - 1 ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : null}
-                        {currentStep === questions.length - 1 ? 'Analizar Respuestas' : 'Siguiente'}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
-            <ReportSummary report={report} isGenerating={isGeneratingReport} />
+        <div className="max-w-3xl mx-auto flex flex-col gap-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Encuesta de Satisfacción</CardTitle>
+              <CardDescription>
+                Pregunta {currentStep + 1} de {questions.length}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(processForm)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="answer"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="font-semibold text-base">{questions[currentStep]}</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Escribe tu respuesta aquí..."
+                            {...field}
+                            rows={5}
+                            className="resize-y"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex justify-between items-center gap-4">
+                    <Button type="button" variant="outline" onClick={handlePreviousStep} disabled={currentStep === 0 || isAnalyzing}>
+                      Anterior
+                    </Button>
+                    <Button type="submit" disabled={isAnalyzing}>
+                      {isAnalyzing && currentStep === questions.length - 1 ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : null}
+                      {currentStep === questions.length - 1 ? 'Analizar Respuestas' : 'Siguiente'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+             <ReportSummary report={report} isGenerating={isGeneratingReport} />
+             <AdviceCard advice={advice} isGenerating={isGeneratingAdvice} />
           </div>
 
-          <div className="lg:col-span-2">
-            <ResponseList responses={responses} />
-          </div>
+          <ResponseList responses={responses} />
         </div>
       </main>
       <input

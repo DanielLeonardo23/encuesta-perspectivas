@@ -1,5 +1,3 @@
-// This is an auto-generated file from Firebase Studio.
-
 'use server';
 
 /**
@@ -19,14 +17,32 @@ const AnalyzeSentimentInputSchema = z.object({
 export type AnalyzeSentimentInput = z.infer<typeof AnalyzeSentimentInputSchema>;
 
 const AnalyzeSentimentOutputSchema = z.object({
-  sentiment: z.string().describe('El sentimiento del texto (positivo, negativo o neutro).'),
-  score: z.number().describe('La puntuación de sentimiento, que va de -1 a 1.'),
-  magnitude: z.number().describe('La magnitud del sentimiento, que indica la fuerza de la emoción.'),
-  detectedEmotions: z.array(z.string()).describe('Las emociones detectadas en el texto (en inglés).'),
+  sentiment: z
+    .string()
+    .describe('El sentimiento del texto (positivo, negativo o neutro).'),
+  score: z
+    .number()
+    .describe(
+      'La puntuación de sentimiento, que va de -1 (muy negativo) a 1 (muy positivo).'
+    ),
+  magnitude: z
+    .number()
+    .describe(
+      'La magnitud del sentimiento, que indica la fuerza de la emoción (de 0 a infinito).'
+    ),
+  detectedEmotions: z
+    .array(z.string())
+    .describe(
+      'Las emociones específicas detectadas en el texto (en español).'
+    ),
 });
-export type AnalyzeSentimentOutput = z.infer<typeof AnalyzeSentimentOutputSchema>;
+export type AnalyzeSentimentOutput = z.infer<
+  typeof AnalyzeSentimentOutputSchema
+>;
 
-export async function analyzeSentiment(input: AnalyzeSentimentInput): Promise<AnalyzeSentimentOutput> {
+export async function analyzeSentiment(
+  input: AnalyzeSentimentInput
+): Promise<AnalyzeSentimentOutput> {
   return analyzeSentimentFlow(input);
 }
 
@@ -34,15 +50,18 @@ const prompt = ai.definePrompt({
   name: 'analyzeSentimentPrompt',
   input: {schema: AnalyzeSentimentInputSchema},
   output: {schema: AnalyzeSentimentOutputSchema},
-  prompt: `Analiza el sentimiento del siguiente texto y proporciona una puntuación de sentimiento, magnitud y emociones detectadas.
+  prompt: `Eres un experto en análisis de sentimientos y psicología. Analiza el siguiente texto de una encuesta de satisfacción de un curso. Sé muy preciso y detallado en tu análisis.
 
-Texto: {{{text}}}
+Texto:
+{{{text}}}
+
+Proporciona un análisis de sentimiento detallado. La puntuación (score) debe reflejar con precisión el tono, desde -1.0 (muy negativo) hasta 1.0 (muy positivo). La magnitud (magnitude) debe indicar la intensidad emocional del texto. Identifica y extrae las emociones clave expresadas en el texto.
 
 Responde en formato JSON con las siguientes claves:
-- sentiment (positivo, negativo o neutro)
-- score (un número entre -1 y 1)
-- magnitude (un número que indica la fuerza de la emoción)
-- detectedEmotions (un array de emociones detectadas en el texto, en inglés)
+- sentiment: "positivo", "negativo" o "neutro".
+- score: un número entre -1.0 y 1.0.
+- magnitude: un número que indica la fuerza de la emoción.
+- detectedEmotions: un array de las emociones principales detectadas, en español (ej: ["alegría", "confusión", "frustración"]).
 `,
 });
 
@@ -52,7 +71,7 @@ const analyzeSentimentFlow = ai.defineFlow(
     inputSchema: AnalyzeSentimentInputSchema,
     outputSchema: AnalyzeSentimentOutputSchema,
   },
-  async input => {
+  async (input) => {
     const {output} = await prompt(input);
     return output!;
   }

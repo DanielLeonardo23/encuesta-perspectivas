@@ -50,7 +50,9 @@ const prompt = ai.definePrompt({
 
   Resultados del Análisis de Sentimiento: {{{sentimentAnalysisResults}}}
 
-  Asegúrate de completar todos los campos de salida especificados en el esquema de salida. El informe y las sugerencias deben estar en español.`,
+  Asegúrate de completar todos los campos de salida especificados en el esquema de salida.
+  - El campo "report" debe ser un párrafo conciso en español.
+  - El campo "suggestedImprovements" debe ser una lista de puntos en español, donde cada punto empieza con un guion (-).`,
 });
 
 const generateSummaryReportFlow = ai.defineFlow(
@@ -69,9 +71,9 @@ const generateSummaryReportFlow = ai.defineFlow(
 
     // Calculate the percentages for confused, stressed, and motivated.
     const totalResponses = sentimentAnalysisResults.length;
-    const percentageConfused = (sentimentAnalysisResults.filter(result => result.detectedEmotions.includes('confusion')).length / totalResponses) * 100;
-    const percentageStressed = (sentimentAnalysisResults.filter(result => result.detectedEmotions.includes('stress')).length / totalResponses) * 100;
-    const percentageMotivated = (sentimentAnalysisResults.filter(result => result.detectedEmotions.includes('motivation')).length / totalResponses) * 100;
+    const percentageConfused = (sentimentAnalysisResults.filter(result => result.detectedEmotions.includes('confusión') || result.detectedEmotions.includes('confusion')).length / totalResponses) * 100;
+    const percentageStressed = (sentimentAnalysisResults.filter(result => result.detectedEmotions.includes('estrés') || result.detectedEmotions.includes('stress')).length / totalResponses) * 100;
+    const percentageMotivated = (sentimentAnalysisResults.filter(result => result.detectedEmotions.includes('motivación') || result.detectedEmotions.includes('motivation')).length / totalResponses) * 100;
 
     const {output} = await prompt({
       ...input,
