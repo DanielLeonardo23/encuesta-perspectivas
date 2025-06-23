@@ -41,6 +41,8 @@ import { exportToCsv, parseCsvToTexts } from "@/lib/csv";
 import type { SurveyResponse, SummaryReport } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 const formSchema = z.object({
   answer: z.string().min(10, "La respuesta debe tener al menos 10 caracteres."),
@@ -66,7 +68,25 @@ const ReportSummary = ({
     );
   }
 
-  if (!report) return null;
+  if (!report) {
+    return (
+       <Card>
+        <CardHeader>
+          <CardTitle>Informe General</CardTitle>
+          <CardDescription>
+            Genera un informe para ver un resumen y métricas clave.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
+          <FileText className="h-12 w-12 mb-4" />
+          <p className="font-semibold">No hay informe que mostrar</p>
+          <p className="text-sm">
+            Haz clic en el botón "Generar Informe" en la cabecera.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -144,7 +164,25 @@ const AdviceCard = ({
     );
   }
 
-  if (!advice) return null;
+  if (!advice) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Consejo Generado por IA</CardTitle>
+          <CardDescription>
+            Genera consejos accionables basados en las respuestas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
+          <Sparkles className="h-12 w-12 mb-4" />
+          <p className="font-semibold">No hay consejos que mostrar</p>
+          <p className="text-sm">
+            Haz clic en el botón "Generar Consejo" en la cabecera.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -215,33 +253,42 @@ const ResponseCard = ({ response }: { response: SurveyResponse }) => {
   );
 };
 
-const ResponseList = ({ responses }: { responses: SurveyResponse[] }) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Respuestas Analizadas</CardTitle>
-      <CardDescription>
-        Aquí están los resultados del análisis de sentimiento para cada respuesta.
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      {responses.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-          <FileText className="h-12 w-12 mb-4" />
-          <p className="font-semibold">Aún no hay respuestas</p>
-          <p className="text-sm">
-            Completa una encuesta o importa un CSV para comenzar.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {responses.map((response) => (
-            <ResponseCard key={response.id} response={response} />
-          ))}
-        </div>
-      )}
-    </CardContent>
-  </Card>
-);
+const IndividualAnalysisView = ({ responses }: { responses: SurveyResponse[] }) => {
+  if (responses.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg mt-4">
+        <FileText className="h-12 w-12 mb-4" />
+        <p className="font-semibold">Aún no hay respuestas analizadas</p>
+        <p className="text-sm">
+          Completa una encuesta o importa un CSV para ver el análisis.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <Tabs defaultValue={responses[0].id} className="w-full mt-4">
+      <TabsList className="relative">
+        <ScrollArea className="w-full whitespace-nowrap rounded-md">
+          <div className="flex w-max space-x-2 p-1">
+            {responses.map((response, index) => (
+              <TabsTrigger key={response.id} value={response.id}>
+                Respuesta {responses.length - index}
+              </TabsTrigger>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      </TabsList>
+      {responses.map((response) => (
+        <TabsContent key={response.id} value={response.id} className="mt-4">
+          <ResponseCard response={response} />
+        </TabsContent>
+      ))}
+    </Tabs>
+  );
+};
+
 
 export default function SurveyInsightsPage() {
   const questions = [
@@ -261,6 +308,7 @@ export default function SurveyInsightsPage() {
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isGeneratingAdvice, setIsGeneratingAdvice] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [activeTab, setActiveTab] = useState("individual");
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -329,6 +377,7 @@ export default function SurveyInsightsPage() {
       return;
     }
     setIsGeneratingReport(true);
+    setActiveTab("report");
     setReport(null);
     try {
       const { generateReportAction } = (await import("./actions")) as { generateReportAction: typeof generateReportAction };
@@ -355,6 +404,7 @@ export default function SurveyInsightsPage() {
       return;
     }
     setIsGeneratingAdvice(true);
+    setActiveTab("advice");
     setAdvice(null);
     try {
       const { generateAdviceAction } = (await import("./actions")) as { generateAdviceAction: (responses: SurveyResponse[]) => Promise<{ advice: string }> };
@@ -527,13 +577,23 @@ export default function SurveyInsightsPage() {
               </Form>
             </CardContent>
           </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-             <ReportSummary report={report} isGenerating={isGeneratingReport} />
-             <AdviceCard advice={advice} isGenerating={isGeneratingAdvice} />
-          </div>
-
-          <ResponseList responses={responses} />
+          
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="individual">Análisis Individual</TabsTrigger>
+              <TabsTrigger value="report" disabled={responses.length === 0}>Informe General</TabsTrigger>
+              <TabsTrigger value="advice" disabled={responses.length === 0}>Consejo IA</TabsTrigger>
+            </TabsList>
+            <TabsContent value="individual">
+              <IndividualAnalysisView responses={responses} />
+            </TabsContent>
+            <TabsContent value="report">
+              <ReportSummary report={report} isGenerating={isGeneratingReport} />
+            </TabsContent>
+            <TabsContent value="advice">
+              <AdviceCard advice={advice} isGenerating={isGeneratingAdvice} />
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
       <input
