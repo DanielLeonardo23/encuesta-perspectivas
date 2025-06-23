@@ -14,15 +14,15 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeSentimentInputSchema = z.object({
-  text: z.string().describe('The text to analyze for sentiment.'),
+  text: z.string().describe('El texto a analizar.'),
 });
 export type AnalyzeSentimentInput = z.infer<typeof AnalyzeSentimentInputSchema>;
 
 const AnalyzeSentimentOutputSchema = z.object({
-  sentiment: z.string().describe('The sentiment of the text (positive, negative, or neutral).'),
-  score: z.number().describe('The sentiment score, ranging from -1 to 1.'),
-  magnitude: z.number().describe('The magnitude of the sentiment, indicating the strength of the emotion.'),
-  detectedEmotions: z.array(z.string()).describe('The emotions detected in the text.'),
+  sentiment: z.string().describe('El sentimiento del texto (positivo, negativo o neutro).'),
+  score: z.number().describe('La puntuación de sentimiento, que va de -1 a 1.'),
+  magnitude: z.number().describe('La magnitud del sentimiento, que indica la fuerza de la emoción.'),
+  detectedEmotions: z.array(z.string()).describe('Las emociones detectadas en el texto (en inglés).'),
 });
 export type AnalyzeSentimentOutput = z.infer<typeof AnalyzeSentimentOutputSchema>;
 
@@ -34,15 +34,15 @@ const prompt = ai.definePrompt({
   name: 'analyzeSentimentPrompt',
   input: {schema: AnalyzeSentimentInputSchema},
   output: {schema: AnalyzeSentimentOutputSchema},
-  prompt: `Analyze the sentiment of the following text and provide a sentiment score, magnitude, and detected emotions.
+  prompt: `Analiza el sentimiento del siguiente texto y proporciona una puntuación de sentimiento, magnitud y emociones detectadas.
 
-Text: {{{text}}}
+Texto: {{{text}}}
 
-Respond in JSON format with the following keys:
-- sentiment (positive, negative, or neutral)
-- score (a number between -1 and 1)
-- magnitude (a number indicating the strength of the emotion)
-- detectedEmotions (an array of emotions detected in the text)
+Responde en formato JSON con las siguientes claves:
+- sentiment (positivo, negativo o neutro)
+- score (un número entre -1 y 1)
+- magnitude (un número que indica la fuerza de la emoción)
+- detectedEmotions (un array de emociones detectadas en el texto, en inglés)
 `,
 });
 

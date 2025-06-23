@@ -42,8 +42,41 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 const formSchema = z.object({
-  text: z.string().min(10, "Response must be at least 10 characters long."),
+  text: z.string().min(10, "La respuesta debe tener al menos 10 caracteres."),
 });
+
+const PredefinedQuestions = ({ onQuestionSelect }: { onQuestionSelect: (question: string) => void }) => {
+  const questions = [
+    "¿Qué te pareció el ritmo general del curso?",
+    "¿Fueron claros y útiles los materiales proporcionados?",
+    "¿Cómo calificarías la calidad de la enseñanza del instructor?",
+    "¿Hay algo que te gustaría que se mejorara para futuros cursos?",
+    "¿Recomendarías este curso a un amigo o colega? ¿Por qué?",
+  ];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Preguntas de la Encuesta</CardTitle>
+        <CardDescription>
+          Haz clic en una pregunta para empezar a escribir tu respuesta.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2">
+        {questions.map((q, i) => (
+          <Button
+            key={i}
+            variant="outline"
+            className="text-left justify-start h-auto whitespace-normal"
+            onClick={() => onQuestionSelect(q)}
+          >
+            {q}
+          </Button>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
 
 const SurveyForm = ({
   isAnalyzing,
@@ -56,9 +89,9 @@ const SurveyForm = ({
 }) => (
   <Card>
     <CardHeader>
-      <CardTitle>Submit a Response</CardTitle>
+      <CardTitle>Enviar una Respuesta</CardTitle>
       <CardDescription>
-        Enter a survey response below to analyze its sentiment.
+        Introduce una respuesta de la encuesta a continuación para analizar su sentimiento.
       </CardDescription>
     </CardHeader>
     <CardContent>
@@ -69,10 +102,10 @@ const SurveyForm = ({
             name="text"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Survey Response</FormLabel>
+                <FormLabel>Respuesta de la Encuesta</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="e.g., 'I found the course material very engaging and well-structured.'"
+                    placeholder="Ej: 'El material del curso me pareció muy interesante y bien estructurado.'"
                     {...field}
                     rows={4}
                   />
@@ -83,7 +116,7 @@ const SurveyForm = ({
           />
           <Button type="submit" disabled={isAnalyzing} className="w-full">
             {isAnalyzing && <Loader2 className="mr-2 animate-spin" />}
-            Analyze Sentiment
+            Analizar Sentimiento
           </Button>
         </form>
       </Form>
@@ -102,7 +135,7 @@ const ReportSummary = ({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Generating Report...</CardTitle>
+          <CardTitle>Generando Informe...</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center p-8">
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -118,7 +151,7 @@ const ReportSummary = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Lightbulb className="text-accent" /> AI-Generated Summary
+            <Lightbulb className="text-accent" /> Resumen Generado por IA
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -128,26 +161,26 @@ const ReportSummary = ({
 
       <Card>
         <CardHeader>
-          <CardTitle>Key Metrics</CardTitle>
+          <CardTitle>Métricas Clave</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium">Negative Responses</span>
+            <span className="text-sm font-medium">Respuestas Negativas</span>
             <span className="text-lg font-bold flex items-center gap-2">
               <TrendingDown className="text-destructive" />
               {report.numNegativeResponses}
             </span>
           </div>
           <div>
-            <label className="text-sm font-medium">Confused</label>
+            <label className="text-sm font-medium">Confundido</label>
             <Progress value={report.percentageConfused} className="mt-1" />
           </div>
           <div>
-            <label className="text-sm font-medium">Stressed</label>
+            <label className="text-sm font-medium">Estresado</label>
             <Progress value={report.percentageStressed} className="mt-1" />
           </div>
           <div>
-            <label className="text-sm font-medium">Motivated</label>
+            <label className="text-sm font-medium">Motivado</label>
             <Progress value={report.percentageMotivated} className="mt-1" />
           </div>
         </CardContent>
@@ -156,7 +189,7 @@ const ReportSummary = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="text-accent" />
-            Suggested Improvements
+            Sugerencias de Mejora
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -190,24 +223,24 @@ const ResponseCard = ({ response }: { response: SurveyResponse }) => {
         <p className="text-muted-foreground mb-4 italic">"{response.text}"</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div className="flex flex-col gap-1">
-            <span className="font-semibold">Sentiment</span>
+            <span className="font-semibold">Sentimiento</span>
             <Badge variant="outline" className={`w-fit ${getSentimentColor()}`}>
               {getSentimentIcon()}
               <span className="ml-2 capitalize">{response.sentiment}</span>
             </Badge>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="font-semibold">Score</span>
+            <span className="font-semibold">Puntuación</span>
             <span>{response.score.toFixed(2)}</span>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="font-semibold">Magnitude</span>
+            <span className="font-semibold">Magnitud</span>
             <span>{response.magnitude.toFixed(2)}</span>
           </div>
         </div>
         {response.detectedEmotions.length > 0 && (
           <div className="mt-4">
-            <span className="font-semibold text-sm">Detected Emotions</span>
+            <span className="font-semibold text-sm">Emociones Detectadas</span>
             <div className="flex flex-wrap gap-2 mt-2">
               {response.detectedEmotions.map((emotion) => (
                 <Badge key={emotion} variant="secondary">
@@ -225,18 +258,18 @@ const ResponseCard = ({ response }: { response: SurveyResponse }) => {
 const ResponseList = ({ responses }: { responses: SurveyResponse[] }) => (
   <Card>
     <CardHeader>
-      <CardTitle>Analyzed Responses</CardTitle>
+      <CardTitle>Respuestas Analizadas</CardTitle>
       <CardDescription>
-        Here are the sentiment analysis results for each response.
+        Aquí están los resultados del análisis de sentimiento para cada respuesta.
       </CardDescription>
     </CardHeader>
     <CardContent>
       {responses.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
           <FileText className="h-12 w-12 mb-4" />
-          <p className="font-semibold">No responses yet</p>
+          <p className="font-semibold">Aún no hay respuestas</p>
           <p className="text-sm">
-            Submit a response or import a CSV to get started.
+            Envía una respuesta o importa un CSV para comenzar.
           </p>
         </div>
       ) : (
@@ -258,16 +291,25 @@ export default function SurveyInsightsPage() {
   const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { text: "" },
   });
 
+  const handleQuestionSelect = (question: string) => {
+    const currentText = form.getValues("text");
+    const newText = currentText ? `${currentText}\n\n${question} \n` : `${question} \n\n`;
+    form.setValue("text", newText, { shouldValidate: true });
+    textareaRef.current?.focus();
+  };
+
+
   const handleAnalyzeSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsAnalyzing(true);
     try {
-      // Lazy-load server action
       const { analyzeResponseAction } = (await import("./actions")) as { analyzeResponseAction: typeof analyzeResponseAction };
       const result = await analyzeResponseAction(values.text);
       setResponses((prev) => [result, ...prev]);
@@ -275,8 +317,8 @@ export default function SurveyInsightsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Analysis Failed",
-        description: "Could not analyze the sentiment. Please try again.",
+        title: "Análisis Fallido",
+        description: "No se pudo analizar el sentimiento. Por favor, inténtalo de nuevo.",
       });
     } finally {
       setIsAnalyzing(false);
@@ -287,8 +329,8 @@ export default function SurveyInsightsPage() {
     if (responses.length === 0) {
       toast({
         variant: "destructive",
-        title: "Cannot Generate Report",
-        description: "Please analyze at least one response first.",
+        title: "No se puede generar el informe",
+        description: "Por favor, analiza al menos una respuesta primero.",
       });
       return;
     }
@@ -301,8 +343,8 @@ export default function SurveyInsightsPage() {
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Report Generation Failed",
-        description: "Could not generate the summary report.",
+        title: "Falló la Generación del Informe",
+        description: "No se pudo generar el informe de resumen.",
       });
     } finally {
       setIsGeneratingReport(false);
@@ -313,15 +355,15 @@ export default function SurveyInsightsPage() {
     if (responses.length === 0) {
       toast({
         variant: "destructive",
-        title: "Nothing to Export",
-        description: "Analyze some responses before exporting.",
+        title: "Nada que Exportar",
+        description: "Analiza algunas respuestas antes de exportar.",
       });
       return;
     }
     exportToCsv(responses);
     toast({
-      title: "Export Successful",
-      description: "Your data has been exported to CSV.",
+      title: "Exportación Exitosa",
+      description: "Tus datos han sido exportados a CSV.",
     });
   };
 
@@ -333,7 +375,7 @@ export default function SurveyInsightsPage() {
     try {
       const texts = await parseCsvToTexts(file);
       if (texts.length === 0) {
-        throw new Error("CSV file is empty or invalid.");
+        throw new Error("El archivo CSV está vacío o no es válido.");
       }
       
       const { analyzeResponseAction } = (await import("./actions")) as { analyzeResponseAction: typeof analyzeResponseAction };
@@ -348,20 +390,19 @@ export default function SurveyInsightsPage() {
       setResponses(prev => [...newResponses.reverse(), ...prev]);
 
       toast({
-        title: "Import Successful",
-        description: `Successfully imported and analyzed ${newResponses.length} responses.`,
+        title: "Importación Exitosa",
+        description: `Se importaron y analizaron exitosamente ${newResponses.length} respuestas.`,
       });
 
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Import Failed",
+        title: "Importación Fallida",
         description:
-          "Could not import or parse the CSV file. Please ensure it's a single-column CSV.",
+          "No se pudo importar o analizar el archivo CSV. Asegúrate de que sea un CSV de una sola columna.",
       });
     } finally {
       setIsImporting(false);
-      // Reset file input
       if(fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -375,7 +416,7 @@ export default function SurveyInsightsPage() {
           <div className="flex items-center gap-3">
             <LayoutDashboard className="h-8 w-8 text-primary" />
             <h1 className="text-xl font-bold tracking-tight">
-              Survey Insights
+              Perspectivas de Encuesta
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -389,11 +430,11 @@ export default function SurveyInsightsPage() {
               ) : (
                 <Upload className="mr-2" />
               )}
-              Import CSV
+              Importar CSV
             </Button>
             <Button variant="outline" onClick={handleExport} disabled={responses.length === 0}>
               <Download className="mr-2" />
-              Export CSV
+              Exportar CSV
             </Button>
             <Button
               onClick={handleGenerateReport}
@@ -405,7 +446,7 @@ export default function SurveyInsightsPage() {
               ) : (
                 <FileText className="mr-2" />
               )}
-              Generate Report
+              Generar Informe
             </Button>
           </div>
         </div>
@@ -413,6 +454,7 @@ export default function SurveyInsightsPage() {
       <main className="flex-1 p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           <div className="lg:col-span-1 flex flex-col gap-8">
+             <PredefinedQuestions onQuestionSelect={handleQuestionSelect} />
             <SurveyForm
               form={form}
               isAnalyzing={isAnalyzing}

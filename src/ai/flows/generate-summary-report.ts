@@ -19,17 +19,17 @@ const GenerateSummaryReportInputSchema = z.object({
       detectedEmotions: z.array(z.string()),
       responseText: z.string(),
     })
-  ).describe('An array of sentiment analysis results for each survey response.'),
+  ).describe('Un array con los resultados del análisis de sentimiento para cada respuesta de la encuesta.'),
 });
 export type GenerateSummaryReportInput = z.infer<typeof GenerateSummaryReportInputSchema>;
 
 const GenerateSummaryReportOutputSchema = z.object({
-  report: z.string().describe('A summary report of the survey responses.'),
-  numNegativeResponses: z.number().describe('The number of negative emotional responses.'),
-  percentageConfused: z.number().describe('The percentage of students feeling confused.'),
-  percentageStressed: z.number().describe('The percentage of students feeling stressed.'),
-  percentageMotivated: z.number().describe('The percentage of students feeling motivated.'),
-  suggestedImprovements: z.string().describe('Suggestions for improvements based on overall sentiment.'),
+  report: z.string().describe('Un informe de resumen de las respuestas de la encuesta.'),
+  numNegativeResponses: z.number().describe('El número de respuestas emocionales negativas.'),
+  percentageConfused: z.number().describe('El porcentaje de estudiantes que se sienten confundidos.'),
+  percentageStressed: z.number().describe('El porcentaje de estudiantes que se sienten estresados.'),
+  percentageMotivated: z.number().describe('El porcentaje de estudiantes que se sienten motivados.'),
+  suggestedImprovements: z.string().describe('Sugerencias de mejoras basadas en el sentimiento general.'),
 });
 export type GenerateSummaryReportOutput = z.infer<typeof GenerateSummaryReportOutputSchema>;
 
@@ -41,16 +41,16 @@ const prompt = ai.definePrompt({
   name: 'generateSummaryReportPrompt',
   input: {schema: GenerateSummaryReportInputSchema},
   output: {schema: GenerateSummaryReportOutputSchema},
-  prompt: `You are an AI assistant that generates summary reports for survey responses.
+  prompt: `Eres un asistente de IA que genera informes de resumen para respuestas de encuestas.
 
-  Analyze the following sentiment analysis results and provide a comprehensive summary report including:
-  - The number of negative emotional responses.
-  - The percentage of students feeling confused, stressed, and motivated.
-  - Suggestions for improvements based on the overall sentiment.
+  Analiza los siguientes resultados de análisis de sentimiento y proporciona un informe de resumen completo que incluya:
+  - El número de respuestas emocionales negativas.
+  - El porcentaje de estudiantes que se sienten confundidos, estresados y motivados.
+  - Sugerencias de mejoras basadas en el sentimiento general.
 
-  Sentiment Analysis Results: {{{sentimentAnalysisResults}}}
+  Resultados del Análisis de Sentimiento: {{{sentimentAnalysisResults}}}
 
-  Make sure to populate all the output fields specified in the output schema.`,
+  Asegúrate de completar todos los campos de salida especificados en el esquema de salida. El informe y las sugerencias deben estar en español.`,
 });
 
 const generateSummaryReportFlow = ai.defineFlow(
