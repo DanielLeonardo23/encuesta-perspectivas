@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +15,7 @@ import {
   TrendingUp,
   Upload,
 } from "lucide-react";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import type { generateReportAction, analyzeResponseAction } from "./actions";
@@ -42,87 +43,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 const formSchema = z.object({
-  text: z.string().min(10, "La respuesta debe tener al menos 10 caracteres."),
+  answer: z.string().min(10, "La respuesta debe tener al menos 10 caracteres."),
 });
-
-const PredefinedQuestions = ({ onQuestionSelect }: { onQuestionSelect: (question: string) => void }) => {
-  const questions = [
-    "¿Qué te pareció el ritmo general del curso?",
-    "¿Fueron claros y útiles los materiales proporcionados?",
-    "¿Cómo calificarías la calidad de la enseñanza del instructor?",
-    "¿Hay algo que te gustaría que se mejorara para futuros cursos?",
-    "¿Recomendarías este curso a un amigo o colega? ¿Por qué?",
-  ];
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Preguntas de la Encuesta</CardTitle>
-        <CardDescription>
-          Haz clic en una pregunta para empezar a escribir tu respuesta.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2">
-        {questions.map((q, i) => (
-          <Button
-            key={i}
-            variant="outline"
-            className="text-left justify-start h-auto whitespace-normal"
-            onClick={() => onQuestionSelect(q)}
-          >
-            {q}
-          </Button>
-        ))}
-      </CardContent>
-    </Card>
-  );
-};
-
-const SurveyForm = ({
-  isAnalyzing,
-  form,
-  onSubmit,
-}: {
-  isAnalyzing: boolean;
-  form: ReturnType<typeof useForm<z.infer<typeof formSchema>>>;
-  onSubmit: (values: z.infer<typeof formSchema>) => void;
-}) => (
-  <Card>
-    <CardHeader>
-      <CardTitle>Enviar una Respuesta</CardTitle>
-      <CardDescription>
-        Introduce una respuesta de la encuesta a continuación para analizar su sentimiento.
-      </CardDescription>
-    </CardHeader>
-    <CardContent>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="text"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Respuesta de la Encuesta</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Ej: 'El material del curso me pareció muy interesante y bien estructurado.'"
-                    {...field}
-                    rows={4}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" disabled={isAnalyzing} className="w-full">
-            {isAnalyzing && <Loader2 className="mr-2 animate-spin" />}
-            Analizar Sentimiento
-          </Button>
-        </form>
-      </Form>
-    </CardContent>
-  </Card>
-);
 
 const ReportSummary = ({
   report,
@@ -220,7 +142,7 @@ const ResponseCard = ({ response }: { response: SurveyResponse }) => {
   return (
     <Card>
       <CardContent className="p-4">
-        <p className="text-muted-foreground mb-4 italic">"{response.text}"</p>
+        <p className="text-muted-foreground mb-4 italic whitespace-pre-wrap">"{response.text}"</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div className="flex flex-col gap-1">
             <span className="font-semibold">Sentimiento</span>
@@ -269,7 +191,7 @@ const ResponseList = ({ responses }: { responses: SurveyResponse[] }) => (
           <FileText className="h-12 w-12 mb-4" />
           <p className="font-semibold">Aún no hay respuestas</p>
           <p className="text-sm">
-            Envía una respuesta o importa un CSV para comenzar.
+            Completa una encuesta o importa un CSV para comenzar.
           </p>
         </div>
       ) : (
@@ -284,6 +206,16 @@ const ResponseList = ({ responses }: { responses: SurveyResponse[] }) => (
 );
 
 export default function SurveyInsightsPage() {
+  const questions = [
+    "¿Qué te pareció el ritmo general del curso?",
+    "¿Fueron claros y útiles los materiales proporcionados?",
+    "¿Cómo calificarías la calidad de la enseñanza del instructor?",
+    "¿Hay algo que te gustaría que se mejorara para futuros cursos?",
+    "¿Recomendarías este curso a un amigo o colega? ¿Por qué?",
+  ];
+
+  const [currentStep, setCurrentStep] = useState(0);
+  const [answers, setAnswers] = useState<string[]>(() => Array(questions.length).fill(""));
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [report, setReport] = useState<SummaryReport | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -291,37 +223,59 @@ export default function SurveyInsightsPage() {
   const [isImporting, setIsImporting] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
-    defaultValues: { text: "" },
+    defaultValues: { answer: "" },
   });
 
-  const handleQuestionSelect = (question: string) => {
-    const currentText = form.getValues("text");
-    const newText = currentText ? `${currentText}\n\n${question} \n` : `${question} \n\n`;
-    form.setValue("text", newText, { shouldValidate: true });
-    textareaRef.current?.focus();
+  useEffect(() => {
+    form.setValue("answer", answers[currentStep] || "");
+  }, [currentStep, answers, form]);
+
+  const processForm = async (values: z.infer<typeof formSchema>) => {
+    const newAnswers = [...answers];
+    newAnswers[currentStep] = values.answer;
+    setAnswers(newAnswers);
+
+    if (currentStep < questions.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      setIsAnalyzing(true);
+      const combinedText = newAnswers
+        .map((ans, i) => `${questions[i]}\nRespuesta: ${ans}`)
+        .join("\n\n");
+
+      try {
+        const { analyzeResponseAction } = (await import("./actions")) as {
+          analyzeResponseAction: typeof analyzeResponseAction;
+        };
+        const result = await analyzeResponseAction(combinedText);
+        setResponses((prev) => [result, ...prev]);
+        setAnswers(Array(questions.length).fill(""));
+        setCurrentStep(0);
+        form.reset({ answer: "" });
+      } catch (error) {
+        toast({
+          variant: "destructive",
+          title: "Análisis Fallido",
+          description: "No se pudo analizar el sentimiento. Por favor, inténtalo de nuevo.",
+        });
+      } finally {
+        setIsAnalyzing(false);
+      }
+    }
   };
+  
+  const handlePreviousStep = () => {
+    // Save current answer before going back
+    const currentAnswer = form.getValues("answer");
+    const newAnswers = [...answers];
+    newAnswers[currentStep] = currentAnswer;
+    setAnswers(newAnswers);
 
-
-  const handleAnalyzeSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsAnalyzing(true);
-    try {
-      const { analyzeResponseAction } = (await import("./actions")) as { analyzeResponseAction: typeof analyzeResponseAction };
-      const result = await analyzeResponseAction(values.text);
-      setResponses((prev) => [result, ...prev]);
-      form.reset();
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Análisis Fallido",
-        description: "No se pudo analizar el sentimiento. Por favor, inténtalo de nuevo.",
-      });
-    } finally {
-      setIsAnalyzing(false);
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
     }
   };
 
@@ -454,12 +408,49 @@ export default function SurveyInsightsPage() {
       <main className="flex-1 p-4 md:p-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
           <div className="lg:col-span-1 flex flex-col gap-8">
-             <PredefinedQuestions onQuestionSelect={handleQuestionSelect} />
-            <SurveyForm
-              form={form}
-              isAnalyzing={isAnalyzing}
-              onSubmit={handleAnalyzeSubmit}
-            />
+            <Card>
+              <CardHeader>
+                <CardTitle>Encuesta de Satisfacción</CardTitle>
+                <CardDescription>
+                  Pregunta {currentStep + 1} de {questions.length}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form onSubmit={form.handleSubmit(processForm)} className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="answer"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="font-semibold text-base">{questions[currentStep]}</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="Escribe tu respuesta aquí..."
+                              {...field}
+                              rows={5}
+                              className="resize-y"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-between items-center gap-4">
+                      <Button type="button" variant="outline" onClick={handlePreviousStep} disabled={currentStep === 0 || isAnalyzing}>
+                        Anterior
+                      </Button>
+                      <Button type="submit" disabled={isAnalyzing}>
+                        {isAnalyzing && currentStep === questions.length - 1 ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        {currentStep === questions.length - 1 ? 'Analizar Respuestas' : 'Siguiente'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
             <ReportSummary report={report} isGenerating={isGeneratingReport} />
           </div>
 
