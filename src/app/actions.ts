@@ -1,7 +1,6 @@
 "use server";
 
 import { analyzeSentiment } from "@/ai/flows/analyze-sentiment";
-import { generateAdvice } from "@/ai/flows/generate-advice";
 import { generateSummaryReport } from "@/ai/flows/generate-summary-report";
 import type { SurveyResponse, SummaryReport } from "@/lib/types";
 
@@ -28,6 +27,7 @@ export async function generateReportAction(
     const sentimentAnalysisResults = responses.map((r) => ({
       score: r.score,
       magnitude: r.magnitude,
+      sentiment: r.sentiment,
       detectedEmotions: r.detectedEmotions,
       responseText: r.text,
     }));
@@ -37,17 +37,5 @@ export async function generateReportAction(
   } catch (error) {
     console.error("Error in generateReportAction:", error);
     throw new Error("Failed to generate summary report.");
-  }
-}
-
-export async function generateAdviceAction(
-  responses: SurveyResponse[]
-): Promise<{ advice: string }> {
-  try {
-    const adviceData = await generateAdvice({ responses });
-    return adviceData;
-  } catch (error) {
-    console.error("Error in generateAdviceAction:", error);
-    throw new Error("Failed to generate advice.");
   }
 }

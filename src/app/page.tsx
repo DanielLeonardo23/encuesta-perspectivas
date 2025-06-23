@@ -12,7 +12,6 @@ import {
   Smile,
   Sparkles,
   TrendingDown,
-  TrendingUp,
   Upload,
 } from "lucide-react";
 import React, { useRef, useState, useEffect } from "react";
@@ -130,8 +129,8 @@ const ReportSummary = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="text-accent" />
-            Sugerencias de Mejora
+            <Sparkles className="text-accent" />
+            Consejos y Mejoras Accionables
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -141,62 +140,6 @@ const ReportSummary = ({
         </CardContent>
       </Card>
     </div>
-  );
-};
-
-const AdviceCard = ({
-  advice,
-  isGenerating,
-}: {
-  advice: string | null;
-  isGenerating: boolean;
-}) => {
-  if (isGenerating) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Generando Consejo...</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center p-8">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!advice) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Consejo Generado por IA</CardTitle>
-          <CardDescription>
-            Genera consejos accionables basados en las respuestas.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-          <Sparkles className="h-12 w-12 mb-4" />
-          <p className="font-semibold">No hay consejos que mostrar</p>
-          <p className="text-sm">
-            Haz clic en el botón "Generar Consejo" en la cabecera.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Sparkles className="text-accent" /> Consejo Generado por IA
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-          {advice}
-        </p>
-      </CardContent>
-    </Card>
   );
 };
 
@@ -303,10 +246,8 @@ export default function SurveyInsightsPage() {
   const [answers, setAnswers] = useState<string[]>(() => Array(questions.length).fill(""));
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [report, setReport] = useState<SummaryReport | null>(null);
-  const [advice, setAdvice] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-  const [isGeneratingAdvice, setIsGeneratingAdvice] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [activeTab, setActiveTab] = useState("individual");
   const { toast } = useToast();
@@ -391,33 +332,6 @@ export default function SurveyInsightsPage() {
       });
     } finally {
       setIsGeneratingReport(false);
-    }
-  };
-
-  const handleGenerateAdvice = async () => {
-    if (responses.length === 0) {
-      toast({
-        variant: "destructive",
-        title: "No se puede generar consejo",
-        description: "Por favor, analiza al menos una respuesta primero.",
-      });
-      return;
-    }
-    setIsGeneratingAdvice(true);
-    setActiveTab("advice");
-    setAdvice(null);
-    try {
-      const { generateAdviceAction } = (await import("./actions")) as { generateAdviceAction: (responses: SurveyResponse[]) => Promise<{ advice: string }> };
-      const adviceData = await generateAdviceAction(responses);
-      setAdvice(adviceData.advice);
-    } catch (error) {
-      toast({
-        variant: "destructive",
-        title: "Falló la Generación del Consejo",
-        description: "No se pudo generar el consejo.",
-      });
-    } finally {
-      setIsGeneratingAdvice(false);
     }
   };
 
@@ -508,6 +422,7 @@ export default function SurveyInsightsPage() {
             <Button
               onClick={handleGenerateReport}
               disabled={responses.length === 0 || isGeneratingReport}
+              className="bg-accent hover:bg-accent/90 text-accent-foreground"
             >
               {isGeneratingReport ? (
                 <Loader2 className="mr-2 animate-spin" />
@@ -515,18 +430,6 @@ export default function SurveyInsightsPage() {
                 <FileText className="mr-2" />
               )}
               Generar Informe
-            </Button>
-             <Button
-              onClick={handleGenerateAdvice}
-              disabled={responses.length === 0 || isGeneratingAdvice}
-              className="bg-accent hover:bg-accent/90 text-accent-foreground"
-            >
-              {isGeneratingAdvice ? (
-                <Loader2 className="mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2" />
-              )}
-              Generar Consejo
             </Button>
           </div>
         </div>
@@ -578,19 +481,15 @@ export default function SurveyInsightsPage() {
           </Card>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="individual">Análisis Individual</TabsTrigger>
               <TabsTrigger value="report" disabled={responses.length === 0}>Informe General</TabsTrigger>
-              <TabsTrigger value="advice" disabled={responses.length === 0}>Consejo IA</TabsTrigger>
             </TabsList>
             <TabsContent value="individual">
               <IndividualAnalysisView responses={responses} />
             </TabsContent>
             <TabsContent value="report">
               <ReportSummary report={report} isGenerating={isGeneratingReport} />
-            </TabsContent>
-            <TabsContent value="advice">
-              <AdviceCard advice={advice} isGenerating={isGeneratingAdvice} />
             </TabsContent>
           </Tabs>
         </div>

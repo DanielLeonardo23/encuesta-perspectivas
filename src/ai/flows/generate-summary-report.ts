@@ -3,7 +3,7 @@
 /**
  * @fileOverview Generates a summary report of survey responses using GenAI.
  *
- * - generateSummaryReport - A function that generates the summary report.
+ * - generateSummaryReport - A function that generates the summary report and actionable advice.
  * - GenerateSummaryReportInput - The input type for the generateSummaryReport function.
  * - GenerateSummaryReportOutput - The return type for the generateSummaryReport function.
  */
@@ -16,6 +16,7 @@ const GenerateSummaryReportInputSchema = z.object({
     z.object({
       score: z.number(),
       magnitude: z.number(),
+      sentiment: z.string(),
       detectedEmotions: z.array(z.string()),
       responseText: z.string(),
     })
@@ -24,12 +25,12 @@ const GenerateSummaryReportInputSchema = z.object({
 export type GenerateSummaryReportInput = z.infer<typeof GenerateSummaryReportInputSchema>;
 
 const GenerateSummaryReportOutputSchema = z.object({
-  report: z.string().describe('Un informe de resumen de las respuestas de la encuesta.'),
+  report: z.string().describe('Un informe de resumen de las respuestas de la encuesta en español.'),
   numNegativeResponses: z.number().describe('El número de respuestas emocionales negativas.'),
   percentageConfused: z.number().describe('El porcentaje de estudiantes que se sienten confundidos.'),
   percentageStressed: z.number().describe('El porcentaje de estudiantes que se sienten estresados.'),
   percentageMotivated: z.number().describe('El porcentaje de estudiantes que se sienten motivados.'),
-  suggestedImprovements: z.string().describe('Sugerencias de mejoras basadas en el sentimiento general.'),
+  suggestedImprovements: z.string().describe('Una lista de consejos prácticos y accionables para mejorar el curso, basados en los patrones recurrentes y comentarios significativos. Cada consejo debe empezar con un guion (-).'),
 });
 export type GenerateSummaryReportOutput = z.infer<typeof GenerateSummaryReportOutputSchema>;
 
@@ -41,18 +42,19 @@ const prompt = ai.definePrompt({
   name: 'generateSummaryReportPrompt',
   input: {schema: GenerateSummaryReportInputSchema},
   output: {schema: GenerateSummaryReportOutputSchema},
-  prompt: `Eres un asistente de IA que genera informes de resumen para respuestas de encuestas.
+  prompt: `Eres un consultor educativo experto. Tu tarea es analizar un conjunto de respuestas de una encuesta de satisfacción de un curso y generar un informe completo.
 
-  Analiza los siguientes resultados de análisis de sentimiento y proporciona un informe de resumen completo que incluya:
-  - El número de respuestas emocionales negativas.
-  - El porcentaje de estudiantes que se sienten confundidos, estresados y motivados.
-  - Sugerencias de mejoras basadas en el sentimiento general.
+  Analiza las siguientes respuestas:
+  {{#each sentimentAnalysisResults}}
+  - Sentimiento: {{sentiment}} (Puntuación: {{score}})
+    Emociones: {{#if detectedEmotions}}{{#each detectedEmotions}}{{.}}{{#unless @last}}, {{/unless}}{{/each}}{{else}}Ninguna detectada{{/if}}
+    Respuesta: "{{responseText}}"
+  {{/each}}
 
-  Resultados del Análisis de Sentimiento: {{{sentimentAnalysisResults}}}
-
-  Asegúrate de completar todos los campos de salida especificados en el esquema de salida.
-  - El campo "report" debe ser un párrafo conciso en español.
-  - El campo "suggestedImprovements" debe ser una lista de puntos en español, donde cada punto empieza con un guion (-).`,
+  Basándote en el análisis de las respuestas, genera lo siguiente:
+  - Un informe de resumen conciso en español para el campo "report".
+  - Una lista de consejos prácticos y accionables para el instructor del curso para el campo "suggestedImprovements". Enfócate en los patrones recurrentes y en los comentarios más significativos. Cada consejo debe estar en español y empezar con un guion (-) en una nueva línea.
+`,
 });
 
 const generateSummaryReportFlow = ai.defineFlow(
