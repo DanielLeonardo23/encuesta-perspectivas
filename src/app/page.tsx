@@ -393,7 +393,7 @@ export default function SurveyInsightsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-background text-foreground font-body">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 w-full border-b bg-card">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-3">
