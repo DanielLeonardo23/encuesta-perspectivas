@@ -152,12 +152,6 @@ const ResponseCard = ({ response }: { response: SurveyResponse }) => {
     return <Meh className="text-gray-500" />;
   };
 
-  const getSentimentColor = () => {
-    if (response.sentiment === "positive") return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-    if (response.sentiment === "negative") return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-    return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200";
-  }
-
   return (
     <Card>
       <CardContent className="p-4">
@@ -165,7 +159,7 @@ const ResponseCard = ({ response }: { response: SurveyResponse }) => {
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
           <div className="flex flex-col gap-1">
             <span className="font-semibold">Sentimiento</span>
-            <Badge variant="outline" className={`w-fit ${getSentimentColor()}`}>
+            <Badge variant="outline" className="w-fit" data-sentiment={response.sentiment}>
               {getSentimentIcon()}
               <span className="ml-2 capitalize">{response.sentiment}</span>
             </Badge>
@@ -252,6 +246,11 @@ export default function SurveyInsightsPage() {
   const [activeTab, setActiveTab] = useState("individual");
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -297,7 +296,6 @@ export default function SurveyInsightsPage() {
   };
   
   const handlePreviousStep = () => {
-    // Save current answer before going back
     const currentAnswer = form.getValues("answer");
     const newAnswers = [...answers];
     newAnswers[currentStep] = currentAnswer;
@@ -480,18 +478,20 @@ export default function SurveyInsightsPage() {
             </CardContent>
           </Card>
           
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="individual">Análisis Individual</TabsTrigger>
-              <TabsTrigger value="report" disabled={responses.length === 0}>Informe General</TabsTrigger>
-            </TabsList>
-            <TabsContent value="individual">
-              <IndividualAnalysisView responses={responses} />
-            </TabsContent>
-            <TabsContent value="report">
-              <ReportSummary report={report} isGenerating={isGeneratingReport} />
-            </TabsContent>
-          </Tabs>
+          {isClient && (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="individual">Análisis Individual</TabsTrigger>
+                <TabsTrigger value="report" disabled={responses.length === 0}>Informe General</TabsTrigger>
+              </TabsList>
+              <TabsContent value="individual">
+                <IndividualAnalysisView responses={responses} />
+              </TabsContent>
+              <TabsContent value="report">
+                <ReportSummary report={report} isGenerating={isGeneratingReport} />
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
       </main>
       <input
